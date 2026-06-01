@@ -254,4 +254,13 @@ class GameTest {
         assertFalse(g2.isOver());
         assertInstanceOf(ZigZagSnake.class, f2.getSnake());
     }
+
+    @Test
+    void start_sineFactory_createsSineSnake() {
+        GameField f = new GameField(new Dimension2D(10, 10));
+        Game g = new Game(f, new SimpleSpawner(f, new SineSnakeFactory()));
+        g.start();
+        assertFalse(g.isOver());
+        assertInstanceOf(SineSnake.class, f.getSnake());
+    }
 }
