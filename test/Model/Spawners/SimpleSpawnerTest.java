@@ -3,6 +3,9 @@ package Model.Spawners;
 import Model.gamefield.*;
 import Model.units.*;
 import org.junit.jupiter.api.*;
+
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class SimpleSpawnerTest {
@@ -192,5 +195,27 @@ class SimpleSpawnerTest {
         SimpleSpawner s = new SimpleSpawner(f);
 
         assertDoesNotThrow(() -> s.placeSnake());
+    }
+
+    @Test void placeSnake_exactlyThreeCellsOccupied() {
+        GameField f = new GameField(new Dimension2D(10, 10));
+        new SimpleSpawner(f).placeSnake();
+        AbstractSnake snake = f.getSnake();
+        List<SnakeSegment> segs = snake.getSegments();
+
+        // Ровно 3 сегмента в разных ячейках
+        assertEquals(3, segs.size());
+        long unique = segs.stream().map(SnakeSegment::owner).distinct().count();
+        assertEquals(3, unique);
+
+        // Сегменты идут последовательно — каждый сосед предыдущего
+        for (int i = 0; i < segs.size() - 1; i++) {
+            assertTrue(segs.get(i).owner().isNeighbor(segs.get(i+1).owner()));
+        }
+
+        // Ровно 3 ячейки поля заняты сегментами — не больше
+        int count = 0;
+        for (Cell c : f) if (!c.isEmpty(SnakeSegment.class)) count++;
+        assertEquals(3, count);
     }
 }

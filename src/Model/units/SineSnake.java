@@ -18,34 +18,27 @@ public class SineSnake extends AbstractSnake {
     }
 
 
+    /**
+     * Строит цели: голова с боковым смещением,
+     * остальные — стандартно каждый на место предыдущего.
+     */
     @Override
     protected void shiftSegments(Cell nextCell) {
         List<SnakeSegment> segments = getSegments();
         Direction dir = getDirection();
 
-
+        // Голова идёт в виляющую ячейку
         Cell wiggledNext = wiggleNext(nextCell, dir);
 
-        // каждый сег на место предыдущего
         List<Cell> targets = new ArrayList<>();
         targets.add(wiggledNext);
         for (int i = 0; i < segments.size() - 1; i++) {
             targets.add(segments.get(i).owner());
         }
 
-        // Снять все сегменты
-        for (SnakeSegment seg : segments) {
-            Cell c = seg.owner();
-            if (c != null) c.extractUnit(seg);
-        }
+        applyTargets(targets);
 
-        // Расставить по целям
-        for (int i = 0; i < segments.size(); i++) {
-            Cell target = targets.get(i);
-            if (target != null) segments.get(i).moveTo(target);
-        }
-
-        phase = 1 - phase;
+        phase = 1 - phase; // переключаем сторону для следующего шага
     }
 
 

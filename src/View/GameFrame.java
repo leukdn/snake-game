@@ -8,7 +8,13 @@ import Model.units.SnakeFactory;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
+/**
+ * Главное окно игры.
+
+ */
 public class GameFrame extends JFrame {
 
     private static final String CARD_MENU = "MENU";
@@ -65,8 +71,7 @@ public class GameFrame extends JFrame {
         gamePanel.add(fieldView, BorderLayout.CENTER);
         gamePanel.revalidate();
 
-        removeKeyListeners();
-        addKeyListener(new Controller(game));
+        bindKeyboard();
 
         int[] maxLives = {0};
         game.addViewListener(new GameListener() {
@@ -98,14 +103,48 @@ public class GameFrame extends JFrame {
         requestFocusInWindow();
     }
 
+
+
+    /**
+     * Регистрирует обработчик клавиатуры на текущую игру.
+     * Вызывается при каждом старте/рестарте, чтобы старые слушатели не накапливались.
+     */
+    private void bindKeyboard() {
+        for (var kl : getKeyListeners()) removeKeyListener(kl);
+        addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                handleKey(e.getKeyCode());
+            }
+        });
+    }
+
+    /**
+     * Переводит код клавиши в направление и передаёт в модель.
+     * Поддерживаются стрелки и WASD.
+     */
+    private void handleKey(int keyCode) {
+        Direction d = toDirection(keyCode);
+        if (d != null && game != null) game.setDirection(d);
+    }
+
+    private Direction toDirection(int key) {
+        return switch (key) {
+            case KeyEvent.VK_UP,    KeyEvent.VK_W -> Direction.NORTH;
+            case KeyEvent.VK_DOWN,  KeyEvent.VK_S -> Direction.SOUTH;
+            case KeyEvent.VK_LEFT,  KeyEvent.VK_A -> Direction.WEST;
+            case KeyEvent.VK_RIGHT, KeyEvent.VK_D -> Direction.EAST;
+            default -> null;
+        };
+    }
+
+
+    //  HUD
+
     private void updateHud() {
         AbstractSnake s = game.getGameField().getSnake();
         if (s != null)
             hudPanel.updateStats(game.getScore(), s.getLives(),
                     s.getStepsAfterEat(), s.getK());
-    }
-
-    private void removeKeyListeners() {
-        for (var kl : getKeyListeners()) removeKeyListener(kl);
     }
 }

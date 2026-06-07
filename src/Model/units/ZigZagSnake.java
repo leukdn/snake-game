@@ -15,25 +15,16 @@ public class ZigZagSnake extends AbstractSnake {
         super(lives, k);
     }
 
+    /**
+     * Строит зигзаг-цели и передаёт в applyTargets()
+     * Голова прямо. Сегменты тела смещаются группами по 2
+     */
     @Override
     protected void shiftSegments(Cell nextCell) {
-        List<SnakeSegment> segments = getSegments();
-        Direction dir = getDirection();
-
-        List<Cell> targets = buildZigzagTargets(nextCell, segments, dir);
-
-        // Снять все сегменты
-        for (SnakeSegment seg : segments) {
-            Cell c = seg.owner();
-            if (c != null) c.extractUnit(seg);
-        }
-
-        // Расставить по целям
-        for (int i = 0; i < segments.size(); i++) {
-            Cell target = targets.get(i);
-            if (target != null) segments.get(i).moveTo(target);
-        }
+        List<Cell> targets = buildZigzagTargets(nextCell, getSegments(), getDirection());
+        applyTargets(targets);
     }
+
 
     private List<Cell> buildZigzagTargets(
             Cell nextCell,

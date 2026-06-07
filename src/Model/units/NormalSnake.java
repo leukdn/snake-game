@@ -15,29 +15,19 @@ public class NormalSnake extends AbstractSnake {
     }
 
     /**
-     * Стандартный сдвиг
+     * Строит список целей: голова → nextCell,
+     * каждый следующий сегмент на место предыдущего.
      */
     @Override
     protected void shiftSegments(Cell nextCell) {
         List<SnakeSegment> segments = getSegments();
 
-        // Запомнить целевые ячейки
         List<Cell> targets = new ArrayList<>();
         targets.add(nextCell);
         for (int i = 0; i < segments.size() - 1; i++) {
             targets.add(segments.get(i).owner());
         }
 
-        // Снять все сегменты
-        for (SnakeSegment seg : segments) {
-            Cell c = seg.owner();
-            if (c != null) c.extractUnit(seg);
-        }
-
-        // Расставить по целям
-        for (int i = 0; i < segments.size(); i++) {
-            Cell target = targets.get(i);
-            if (target != null) segments.get(i).moveTo(target);
-        }
+        applyTargets(targets);
     }
 }

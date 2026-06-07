@@ -22,7 +22,7 @@ public class SimpleSpawner extends Spawner {
         this.factory = factory;
     }
 
-    @Override public Spawner placeRocks() {
+    @Override protected Spawner placeRocks() {
         List<Cell> free = getFreeCells();
         Collections.shuffle(free, random);
         for (int i = 0; i < ROCK_COUNT && i < free.size(); i++)
@@ -30,7 +30,7 @@ public class SimpleSpawner extends Spawner {
         return this;
     }
 
-    @Override public Spawner placeRodents(int count) {
+    @Override protected Spawner placeRodents(int count) {
         for (int i = 0; i < count; i++) spawnRodent();
         return this;
     }
@@ -105,9 +105,5 @@ public class SimpleSpawner extends Spawner {
         return null;
     }
 
-    private List<Cell> getFreeCells() {
-        List<Cell> result = new ArrayList<>();
-        for (Cell c : gameField) if (c.isEmpty()) result.add(c);
-        return result;
-    }
+
 }

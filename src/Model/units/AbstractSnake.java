@@ -60,6 +60,18 @@ public abstract class AbstractSnake extends Unit {
 
     protected abstract void shiftSegments(Cell nextCell);
 
+    protected void applyTargets(List<Cell> targets) {
+        // Снять всех сразу — ячейки должны быть свободны перед расстановкой
+        for (SnakeSegment seg : segments) {
+            Cell c = seg.owner();
+            if (c != null) c.extractUnit(seg);
+        }
+        // Расставить по целям
+        for (int i = 0; i < segments.size(); i++) {
+            Cell target = targets.get(i);
+            if (target != null) segments.get(i).moveTo(target);
+        }
+    }
 
 
     private Cell resolveNextCell() {
@@ -144,7 +156,7 @@ public abstract class AbstractSnake extends Unit {
         this.direction = d;
     }
 
-
+    
 
     public boolean isAlive()                { return isActive() && lives > 0; }
     public int getLives()                   { return lives; }

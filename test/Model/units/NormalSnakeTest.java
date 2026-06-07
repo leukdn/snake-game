@@ -326,4 +326,34 @@ class NormalSnakeTest {
         assertDoesNotThrow(() -> seg.moveTo(target));
         assertEquals(target, seg.owner());
     }
+
+    @Test void rodentEaten_stateCorrect_atMomentOfEvent() {
+        int[]     sizeAtEvent  = {0};
+        boolean[] rodentGone   = {false};
+        int[]     stepsAtEvent = {-1};
+
+        Rodent r = new Rodent();
+        snake.setSnakeListener(new SnakeListener() {
+            public void rodentEaten() {
+                sizeAtEvent[0]  = snake.getSegments().size();
+                rodentGone[0]   = !r.isActive();
+                stepsAtEvent[0] = snake.getStepsAfterEat(); // 0 в момент события
+            }
+            public void snakeDied() {}
+        });
+
+        c3.putUnit(r);
+        snake.move();
+
+        // В момент события rodentEaten:
+        assertEquals(4, sizeAtEvent[0]);  // уже выросла
+        assertTrue(rodentGone[0]);        // грызун исчез
+        assertEquals(0, stepsAtEvent[0]); // счётчик сброшен в eat() до события
+
+        // После хода
+        assertEquals(4, snake.getSegments().size());
+        assertEquals(1, snake.getStepsAfterEat()); // ← 1, не 0
+        assertFalse(r.isActive());
+        assertNull(r.owner());
+    }
 }

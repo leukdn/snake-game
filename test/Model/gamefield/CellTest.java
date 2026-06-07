@@ -77,24 +77,14 @@ class CellTest {
     @Test void isNeighbor_false_whenNotConnected() {
         assertFalse(cell.isNeighbor(new Cell()));
     }
-
-    @Test
-    void isEmpty_byType_trueWhenNoSuchUnit() {
-        Cell cell = new Cell();
+    @Test void isEmpty_byType_trueWhenNoSuchUnit() {
         cell.putUnit(new Rock());
-
         assertTrue(cell.isEmpty(SnakeSegment.class));
     }
-
-    @Test
-    void isEmpty_byType_falseWhenUnitExists() {
-        Cell cell = new Cell();
+    @Test void isEmpty_byType_falseWhenUnitExists() {
         cell.putUnit(new SnakeSegment());
-
         assertFalse(cell.isEmpty(SnakeSegment.class));
     }
-
-    /**  деактивируем все юниты в ячейке */
     @Test void deactivate_deactivatesAllUnits() {
         Rock rock = new Rock();
         cell.putUnit(rock);
@@ -103,13 +93,9 @@ class CellTest {
         assertFalse(rock.isActive());
         assertTrue(cell.isEmpty());
     }
-
-    /** deactivate() на пустой ячейке  */
     @Test void deactivate_emptyCell_doesNotThrow() {
         assertDoesNotThrow(() -> cell.deactivate());
     }
-
-    /** addCellListener — срабатывает при putUnit */
     @Test void addCellListener_triggersOnPutUnit() {
         boolean[] placed = {false};
         cell.addCellListener(new CellListener() {
@@ -119,8 +105,6 @@ class CellTest {
         cell.putUnit(new Rodent());
         assertTrue(placed[0]);
     }
-
-    /** addCellListener — срабатывает при extractUnit */
     @Test void addCellListener_triggersOnExtractUnit() {
         boolean[] extracted = {false};
         Rock rock = new Rock();
@@ -132,34 +116,26 @@ class CellTest {
         cell.extractUnit(rock);
         assertTrue(extracted[0]);
     }
-
-    /** setNeighbor — разрывает старую связь c1 ↔ c2 при переустановке */
     @Test void setNeighbor_breaksOldLink() {
         Cell c1 = new Cell(), c2 = new Cell(), c3 = new Cell();
-        c1.setNeighbor(Direction.EAST, c2); // c1 ↔ c2
-        c1.setNeighbor(Direction.EAST, c3); // c1 ↔ c3, c2 должна забыть c1
+        c1.setNeighbor(Direction.EAST, c2);
+        c1.setNeighbor(Direction.EAST, c3);
         assertEquals(c3, c1.getNeighbor(Direction.EAST));
-        assertNull(c2.getNeighbor(Direction.WEST)); // c2 забыла c1
+        assertNull(c2.getNeighbor(Direction.WEST));
         assertEquals(c1, c3.getNeighbor(Direction.WEST));
     }
-
-    /** setNeighbor — разрывает обратную связь n */
     @Test void setNeighbor_breaksReverseLink() {
         Cell c1 = new Cell(), c2 = new Cell(), c3 = new Cell();
-        c2.setNeighbor(Direction.WEST, c1); // c2 ↔ c1
-        c3.setNeighbor(Direction.EAST, c2); // c3 ↔ c2; c1 должна забыть c2
-        assertNull(c1.getNeighbor(Direction.EAST)); // c1 забыла c2
+        c2.setNeighbor(Direction.WEST, c1);
+        c3.setNeighbor(Direction.EAST, c2);
+        assertNull(c1.getNeighbor(Direction.EAST));
         assertEquals(c2, c3.getNeighbor(Direction.EAST));
         assertEquals(c3, c2.getNeighbor(Direction.WEST));
     }
-
-    /** setNeighbor null — ничего не делает */
     @Test void setNeighbor_null_doesNothing() {
         assertDoesNotThrow(() -> cell.setNeighbor(null, new Cell()));
         assertDoesNotThrow(() -> cell.setNeighbor(Direction.EAST, null));
     }
-
-    /** возвращает немодифицируемую карту */
     @Test void getNeighbors_returnsUnmodifiable() {
         Cell north = new Cell();
         cell.setNeighbor(Direction.NORTH, north);
@@ -168,9 +144,96 @@ class CellTest {
         assertThrows(UnsupportedOperationException.class,
                 () -> neighbors.put(Direction.EAST, new Cell()));
     }
+    @Test void putUnit_onlyTargetCellAffected() {
+        Cell c0 = new Cell(), c1 = new Cell(), c2 = new Cell();
+        c0.setNeighbor(Direction.EAST, c1);
+        c1.setNeighbor(Direction.EAST, c2);
+        c1.putUnit(new Rodent());
+        assertFalse(c1.isEmpty());
+        assertTrue(c0.isEmpty());
+        assertTrue(c2.isEmpty());
+    }
 
 
+    //  двусторонней связи Unit ↔ Cell
 
+    /**
+     * Инвариант после putUnit:
+
+     */
+    @Test
+    void putUnit_bothSides_consistent() {
+        Rodent r = new Rodent();
+        cell.putUnit(r);
+
+        // Сторона Unit → Cell
+        assertEquals(cell, r.owner(),
+                "unit.owner() должен указывать на ячейку после putUnit");
+        // Сторона Cell → Unit
+        assertTrue(cell.getUnits(Rodent.class).contains(r),
+                "cell должна содержать unit после putUnit");
+    }
+
+    /**
+     * Инвариант после extractUnit:
+
+     */
+    @Test
+    void extractUnit_bothSides_consistent() {
+        Rodent r = new Rodent();
+        cell.putUnit(r);
+        cell.extractUnit(r);
+
+        // Сторона Unit → Cell
+        assertNull(r.owner(),
+                "unit.owner() должен быть null после extractUnit");
+        // Сторона Cell → Unit
+        assertTrue(cell.getUnits(Rodent.class).isEmpty(),
+                "cell не должна содержать unit после extractUnit");
+    }
+
+    /**
+     * Инвариант после deactivate:
+
+     */
+    @Test
+    void deactivate_bothSides_consistent() {
+        Rodent r = new Rodent();
+        cell.putUnit(r);
+        r.deactivate();
+
+        // Сторона Unit → Cell
+        assertNull(r.owner(),
+                "unit.owner() должен быть null после deactivate");
+        // Сторона Cell → Unit
+        assertTrue(cell.isEmpty(),
+                "cell должна быть пуста после deactivate юнита");
+    }
+
+    /**
+     * Нельзя нарушить инвариант: unit не может одновременно
+     * числиться в двух ячейках.
+
+     */
+    @Test
+    void putUnit_unitInTwoCells_invariantHolds() {
+        Cell cell2 = new Cell();
+        Rodent r   = new Rodent();
+
+        cell.putUnit(r);
+        boolean result = cell2.putUnit(r);
+
+        // Второй putUnit отклонён
+        assertFalse(result,
+                "повторный putUnit в другую ячейку должен вернуть false");
+        // Исходная связь не нарушена — Unit сторона
+        assertEquals(cell, r.owner(),
+                "owner должен остаться прежним");
+        // Исходная связь не нарушена — Cell сторона
+        assertTrue(cell.getUnits(Rodent.class).contains(r),
+                "исходная ячейка должна по-прежнему содержать unit");
+        // Вторая ячейка пуста
+        assertTrue(cell2.isEmpty(),
+                "вторая ячейка не должна содержать unit");
+    }
 }
-
-
